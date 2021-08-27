@@ -61,5 +61,5 @@ R functions:
 
 
 ## to do
-- for branch PAML, make small legend to show labelType
+- maybe, for branch PAML, make small legend to show labelType
 
