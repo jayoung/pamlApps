@@ -63,4 +63,3 @@ R functions:
 ## to do
 - when I upload an rst file and the 'use ACE2 example' box is still checked, I see the ACE2 plot. I would like to uncheck the ACE2 example box when a file is uploaded.
 - maybe, for branch PAML, make small legend to show labelType
-- instead of seeing the error message I wanted to show, I see this: "An error has occurred. Check your logs or contact the app author for clarification."  Running the app locally, I see the useful error, but running it through shinyapps.io I see the more generic error
