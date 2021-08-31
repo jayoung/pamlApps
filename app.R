@@ -4,6 +4,8 @@ library(shinythemes)
 library(rmarkdown)
 source("parseAndPlotPAML_functions.R")
 
+options(shiny.sanitize.errors = FALSE) # so that users on shinyio web version see the 'real' error messages
+
 ui <- fluidPage(
     
     ## some styling stuff

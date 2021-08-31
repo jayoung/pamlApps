@@ -54,6 +54,11 @@ plotOmegas(POLA1siteResults,
            highBEBcolor="red")
 
 
+######### test the sitewise PAML code on an rst file from branch PAML run - this should FAIL!
+
+ACE2_sitePAML_rstFileBranchPAML <- "data/example_ACE2/BRANCHpaml_initOmega0.4_codonModel2/rst"
+shouldFail <- parseRSTfile(ACE2_sitePAML_rstFileBranchPAML)
+
 
 ########## branch PAML
 ACE2_branchPAML_mlcFile <- "data/example_ACE2/BRANCHpaml_initOmega0.4_codonModel2/mlc"
