@@ -18,11 +18,6 @@ ui <- fluidPage(
                             border: 2px solid powderblue;
                             margin: auto;
                         }")),
-        ## this controls style of ALL boxes in input forms:
-        #tags$style(type = "text/css", 
-        #".form-control.shiny-bound-input, 
-        #.selectize-input {height: 30px; width:80px; font-size:75%}"),
-        
     ),
     
     ## stuff that's displayed:
@@ -195,11 +190,13 @@ server <- function(input, output) {
     rstParsed <- reactive({
         validate(
             need((!is.null(input$sites_rstFile[1,"datapath"]) | input$sites_useACE2), 
-                 "Can't show results until you've selected an rst file")
+                 "Can't show results until you've selected an rst file") ,
+            need(!(!is.null(input$sites_rstFile[1,"datapath"]) & input$sites_useACE2), 
+                 "You've uploaded an rst file AND selected that you want to use the ACE2 example file - can't do both")
         )
         parseRSTfile(rstFilename())
     })
-    
+
     ### make the plot - should update when a new file is uploaded.
     # I use a separate function to render it, so I can use it within the app AND when saving a pdf file
     myOmegaPlot <- function(){
