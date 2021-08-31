@@ -61,9 +61,6 @@ R functions:
 
 
 ## to do
-- when I run it on >1 rst file in a row, the plot does not update
+- when I upload an rst file and the 'use ACE2 example' box is still checked, I see the ACE2 plot. I would like to uncheck the ACE2 example box when a file is uploaded.
 - maybe, for branch PAML, make small legend to show labelType
-- instead of seeing the error message I wanted to show, I see this: "An error has occurred. Check your logs or contact the app author for clarification."
-- add a couple more test cases, that mimic the problems Jeremy and Tamanash came across:
-    - rst files that contain results for >1 NSsites model (including M2 and M8)
-    - rst files for alignments of >1000 codons - I needed to add a space to the start
+- instead of seeing the error message I wanted to show, I see this: "An error has occurred. Check your logs or contact the app author for clarification."  Running the app locally, I see the useful error, but running it through shinyapps.io I see the more generic error
