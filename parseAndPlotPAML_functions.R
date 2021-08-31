@@ -16,18 +16,29 @@ parseRSTfile <- function(rstFile) {
     if (!grepl("^Supplemental results for CODEML", rst[1])) {
         stop("\n\nERROR - the rst file you specified does not look right - the first line usually begins with 'Supplemental results for CODEML'\n\n")
     }
-    if(sum(grepl("^Bayes Empirical Bayes \\(BEB\\) probabilities", rst)) != 1) {
+    
+    # for rst files that are output of paml run on >1 model at a time, we first extract the model 8 results
+    if(length(grep("^Model 8: beta\\&w>1$", rst))>0) {
+        cat(" Found results for >1 NSsites model - taking only model 8 results\n")
+        rst <- rst[ grep("^Model 8: beta&w>1$", rst)[1] : length(rst) ]
+    }
+    # the inverse grep on 'for 3 classes' gets rid of M2 BEB output
+    lineWhereBEBsectionStarts <- 
+        grepl("^Bayes Empirical Bayes \\(BEB\\) probabilities", rst) &
+        !grepl("for 3 classes", rst)
+    
+    if(sum(lineWhereBEBsectionStarts) != 1) {
         stop("\n\nERROR - the rst file you specified does not look right - there is usually a line near the bottom that contains 'Bayes Empirical Bayes (BEB) probabilities'. Is this really SITE-wise PAML output, from a model that allows positive selection (e.g. model 8)?\n\n")
     }
     
     ## get the line near the top that tell us the omegas for each class
-    lineWithOmegas <- grep("^dN/dS \\(w\\) for site classes", rst) + 2
+    lineWithOmegas <- grep("dN/dS \\(w\\) for site classes", rst) + 2
     omegas <- rst[lineWithOmegas]
     omegas <- strsplit(omegas, "\\s+", perl=TRUE)[[1]]
     omegas <- as.numeric(omegas[ !grepl ("w:", omegas)])
     
     ## get the BEB table
-    lineWhereBEBsectionStarts <- grep("^Bayes Empirical Bayes \\(BEB\\) probabilities", rst)
+    lineWhereBEBsectionStarts <- which(lineWhereBEBsectionStarts)
     lineWhereBEBsectionEnds <- grep("^Positively selected sites", rst)[2] - 1
     
     ## process the two header lines to extract some useful info
@@ -41,8 +52,9 @@ parseRSTfile <- function(rstFile) {
     ## process the table
     BEBtable_prelim <- rst[(lineWhereBEBsectionStarts+2):lineWhereBEBsectionEnds]
     BEBtable_prelim <- gsub("( ","(",BEBtable_prelim,fixed=TRUE)
+    BEBtable_prelim <- paste(" ", BEBtable_prelim, sep="")
     BEBtable_prelim <- strsplit(BEBtable_prelim, "\\s+", perl=TRUE)
-    
+
     BEBtable <- data.frame(pos=as.integer(sapply(BEBtable_prelim, "[[", 2)))
     BEBtable[,firstSequence] <- sapply(BEBtable_prelim, "[[", 3)
     BEBtable[,"bestClass"] <- as.integer(gsub("[()]","",sapply(BEBtable_prelim, "[[", numClasses+4)))

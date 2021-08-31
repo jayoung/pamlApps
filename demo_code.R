@@ -1,5 +1,5 @@
 setwd("/Volumes/malik_h/user/jayoung/paml_screen/pamlApps")
-
+source("parseAndPlotPAML_functions.R")
 
 ######### sitewise PAML
 ACE2_sitePAML_rstFile <- "data/example_ACE2/M8_initOmega0.4_codonModel2/rst"

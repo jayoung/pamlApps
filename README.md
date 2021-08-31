@@ -61,5 +61,9 @@ R functions:
 
 
 ## to do
+- when I run it on >1 rst file in a row, the plot does not update
 - maybe, for branch PAML, make small legend to show labelType
-
+- instead of seeing the error message I wanted to show, I see this: "An error has occurred. Check your logs or contact the app author for clarification."
+- add a couple more test cases, that mimic the problems Jeremy and Tamanash came across:
+    - rst files that contain results for >1 NSsites model (including M2 and M8)
+    - rst files for alignments of >1000 codons - I needed to add a space to the start
