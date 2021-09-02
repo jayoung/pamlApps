@@ -28,6 +28,9 @@ Files in this repository:
 - `app.R` is a shiny app to run this code
 
 
+Note - looks like the ggtree package has some useful functions that my code duplicates. Functions from ggtree to explore: `read.codeml read.codeml_mlc read.paml_rst`
+I could also make fancier tree plots for branch PAML this way.
+
 ## App 1 - sitewise PAML
 
 Input = an rst file (output of site-wise PAML, e.g. model 8).
