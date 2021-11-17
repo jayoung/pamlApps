@@ -1,7 +1,9 @@
 library(colourpicker)
 library(shiny)
 library(shinythemes)
+library(markdown) ## without loading the markdown library I was getting a mysterious error when deploying the app to https://jyoungfhcrc.shinyapps.io/pamlApps/ although the app did work within my own Rstudio session. I found the error message in the Logs file via my shiny dashboard.
 library(rmarkdown)
+
 source("parseAndPlotPAML_functions.R")
 
 options(shiny.sanitize.errors = FALSE) # so that users on shinyio web version see the 'real' error messages
@@ -149,7 +151,15 @@ ui <- fluidPage(
                     textInput(inputId="branches_plotTitle",
                               label="Plot title",
                               value="Branch PAML results"),
-
+                    tags$b("Font sizes"),
+                    fluidRow(
+                        column(4,numericInput(inputId="branches_taxLabelSize", 
+                                               label="Taxon labels", 
+                                               value=0.75)),
+                        column(4,numericInput(inputId="branches_branchLabelSize", 
+                                              label="Branch labels", 
+                                              value=0.5))),
+                    
                     ## options relating to coloring branches with high dN/dS
                     tags$b("Color branch labels with high dN/dS?"),
                     fluidRow(
@@ -276,6 +286,8 @@ server <- function(input, output) {
                  myTitle=input$branches_plotTitle, 
                  colorHighOmega=input$branches_colHigh, 
                  colorHighOmegaThreshold=input$branches_colHighThreshold, 
+                 branchLabelFontSize=input$branches_branchLabelSize, 
+                 taxonLabelFontSize=input$branches_taxLabelSize,
                  highOmegaColor=input$branches_highOmegaColor)
     }
     output$branches_plot <- renderPlot({ 

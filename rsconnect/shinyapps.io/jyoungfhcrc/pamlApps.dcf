@@ -5,10 +5,10 @@ account: jyoungfhcrc
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 4546238
-bundleId: 4986446
+bundleId: 5260508
 url: https://jyoungfhcrc.shinyapps.io/pamlApps/
-when: 1630446909.25889
-lastSyncTime: 1630446909.2589
+when: 1637116497.49919
+lastSyncTime: 1637116497.4992
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: JYprivateNOTES.txt

@@ -166,8 +166,25 @@ parseMLCbranches <- function(mlcFile) {
     mlc <- scan(mlcFile, what="character", sep="\n", quiet=TRUE)
     
     ## check it looks about right:
-    if (!grepl("^CODONML", mlc[1])) {
-        stop("\n\nERROR - the mlc file you specified does not look right - the first line usually begins with 'CODONML'\n\n")
+    headerStringToSearchFor <- "^CODONML \\(in paml version"
+    if (!grepl(headerStringToSearchFor, mlc[1])) {
+        ## try to find that expected first line elsewhere in the file:
+        expectedFirstLineLocations <- grep(headerStringToSearchFor, mlc)
+        ## if we found it just once, we ignore any lines before that:
+        if(length(expectedFirstLineLocations)==1) {
+            mlc <- mlc[expectedFirstLineLocations:length(mlc)]
+        }
+        ## if we didn't find it, we have a problem
+        if(length(expectedFirstLineLocations)==0) {
+            stop("\n\nERROR - the mlc file you specified does not look right - there should be a single line somewhere, probably near the top, that begins with", headerStringToSearchFor, ". I did not see any lines that look like that\n\n")
+        }
+        if(length(expectedFirstLineLocations)>1) {
+            stop("\n\nERROR - the mlc file you specified does not look right - there should be a single line somewhere, probably near the top, that begins with ", headerStringToSearchFor, ". I see multiple lines that look like that\n\n")
+        }
+        ## check again - don't think this will ever fail: the above if statements should have caught all possible situations before we get to this line
+        if (!grepl(headerStringToSearchFor, mlc[1])) {
+            stop("\n\nERROR - the mlc file you specified does not look right - there should be a single line somewhere, probably near the top, that first line usually begins with ", headerStringToSearchFor, "\n\n")
+        }
     }
     if(sum(grepl("^w ratios as labels for TreeView:", mlc)) != 1) {
         stop("\n\nERROR - the mlc file you specified does not look right - there is usually a line near the bottom that contains 'w ratios as labels for TreeView:'. Is this really BRANCH-wise PAML output?\n\n")
