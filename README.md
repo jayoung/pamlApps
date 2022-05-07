@@ -65,3 +65,4 @@ R functions:
 
 ## to do
 - maybe, for branch PAML, make small legend to show labelType
+- for sites plot, add ability to make a protein domain cartoon, if user uploads coordinates
