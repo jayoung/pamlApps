@@ -85,7 +85,7 @@ plotProbs <- function(BEBtable, title=NULL, barCol="grey",
     BEBprobsPosSel <- BEBtable[,dim(BEBtable)[2]]
     if(sum(is.na(BEBprobsPosSel))>0) {
         warnText <- "WARNING - there are 'nan' values in your rst file. That's weird"
-        cat(warnText)
+        # cat(warnText)
         mtext(warnText, side=3, adj=1, col="red", outer=FALSE, line=-1, cex=1)
     }
     # highlight sites with BEB >= a threshold
@@ -140,7 +140,7 @@ plotOmegas <- function(BEBtable, title=NULL, barCol="grey",
     BEBprobsPosSel <- BEBtable[,dim(BEBtable)[2]]
     if(sum(is.na(BEBprobsPosSel))>0) {
         warnText <- "WARNING - there are 'nan' values in your rst file. That's weird"
-        cat(warnText)
+        # cat(warnText)
         mtext(warnText, side=3, adj=1, col="red", outer=FALSE, line=-1, cex=1)
     }
     
