@@ -9,6 +9,7 @@ Fred Hutchinson Cancer Research Center
 
 
 Code: https://github.com/jayoung/pamlApps
+
 Web utility: https://jyoungfhcrc.shinyapps.io/pamlApps/
 
 Two types of analysis (one app for each):
@@ -66,3 +67,25 @@ R functions:
 ## to do
 - maybe, for branch PAML, make small legend to show labelType
 - for sites plot, add ability to make a protein domain cartoon, if user uploads coordinates
+- sites:  Ching-Ho and Risa both had alignments that gave WEIRD BEB results that contain `nan' values and therefore cannot be plotted
+
+
+# fixing sites NAN issue:
+
+Sites:  Ching-Ho and Risa both had alignments that gave WEIRD BEB results that contain `nan' values and therefore cannot be plotted
+
+```
+cd ~/FH_fast_storage/paml_screen/pamlApps/data/other_tests
+runPAML.pl CG31882_sim.fa 
+    # xx running 4063191
+```
+
+another example:
+```
+cd ~/FH_fast_storage/paml_screen/pamlWrapperTestAlignments/testUserTree/Dmel_22_aln.fasta_phymlAndPAML
+```
+
+look at rst file
+figure out what's going on (maybe)
+fix shiny app to handle nans (definitely)
+I think pamlWrapper have a similar rst parse script that I need to fix - it produces rst.BEB.tsv

@@ -82,16 +82,23 @@ plotProbs <- function(BEBtable, title=NULL, barCol="grey",
     if(addThresholdLine) {
         abline(h=threshold, lty=2, col=thresholdLineColor)
     }
+    BEBprobsPosSel <- BEBtable[,dim(BEBtable)[2]]
+    if(sum(is.na(BEBprobsPosSel))>0) {
+        warnText <- "WARNING - there are 'nan' values in your rst file. That's weird"
+        cat(warnText)
+        mtext(warnText, side=3, adj=1, col="red", outer=FALSE, line=-1, cex=1)
+    }
     # highlight sites with BEB >= a threshold
     if(highlightHighBEB) {
-        BEBprobsPosSel <- BEBtable[,dim(BEBtable)[2]]
-        BEBtable_justPosSelSites <- BEBtable[which(BEBprobsPosSel >= highBEBthreshold),]
-        segments(x0=BEBtable_justPosSelSites[,"pos"], y0=0,
-                 x1=BEBtable_justPosSelSites[,"pos"], 
-                 y1=BEBtable_justPosSelSites[,probsColumn], col=highBEBcolor)
-        
-        myLegend <- paste("Color=sites where BEB probability >=",highBEBthreshold)
-        mtext(myLegend, side=1, adj=1, col=highBEBcolor, outer=TRUE)
+        if (sum(BEBprobsPosSel >= highBEBthreshold, na.rm=TRUE) > 0) {
+            BEBtable_justPosSelSites <- BEBtable[which(BEBprobsPosSel >= highBEBthreshold),]
+            segments(x0=BEBtable_justPosSelSites[,"pos"], y0=0,
+                     x1=BEBtable_justPosSelSites[,"pos"], 
+                     y1=BEBtable_justPosSelSites[,probsColumn], col=highBEBcolor)
+            
+            myLegend <- paste("Color=sites where BEB probability >=",highBEBthreshold)
+            mtext(myLegend, side=1, adj=1, col=highBEBcolor, outer=TRUE)
+        }
     }
     if(!is.null(title)) { title(main=title, line=0) }
 }
@@ -130,16 +137,24 @@ plotOmegas <- function(BEBtable, title=NULL, barCol="grey",
     # add the y-axis:
     axis(side=2, at=axisTicks, labels=axisLabels, las=1, mgp=c(1.5,0.75,0)) 
 
+    BEBprobsPosSel <- BEBtable[,dim(BEBtable)[2]]
+    if(sum(is.na(BEBprobsPosSel))>0) {
+        warnText <- "WARNING - there are 'nan' values in your rst file. That's weird"
+        cat(warnText)
+        mtext(warnText, side=3, adj=1, col="red", outer=FALSE, line=-1, cex=1)
+    }
+    
     # highlight sites with BEB >= a threshold
     if(highlightHighBEB) {
-        BEBprobsPosSel <- BEBtable[,dim(BEBtable)[2]]
-        BEBtable_justPosSelSites <- BEBtable[which(BEBprobsPosSel >= highBEBthreshold),]
-        omegasToPlot_justPosSelSites <- omegasToPlot[which(BEBprobsPosSel >= highBEBthreshold)]
-        segments(x0=BEBtable_justPosSelSites[,"pos"], y0=0,
-                 x1=BEBtable_justPosSelSites[,"pos"], 
-                 y1=omegasToPlot_justPosSelSites, col=highBEBcolor)
-        myLegend <- paste("Color=sites where BEB probability >=",highBEBthreshold)
-        mtext(myLegend, side=1, adj=1, col=highBEBcolor, outer=TRUE)
+        if (sum(BEBprobsPosSel >= highBEBthreshold, na.rm=TRUE) > 0) {
+            BEBtable_justPosSelSites <- BEBtable[which(BEBprobsPosSel >= highBEBthreshold),]
+            omegasToPlot_justPosSelSites <- omegasToPlot[which(BEBprobsPosSel >= highBEBthreshold)]
+            segments(x0=BEBtable_justPosSelSites[,"pos"], y0=0,
+                     x1=BEBtable_justPosSelSites[,"pos"], 
+                     y1=omegasToPlot_justPosSelSites, col=highBEBcolor)
+            myLegend <- paste("Color=sites where BEB probability >=",highBEBthreshold)
+            mtext(myLegend, side=1, adj=1, col=highBEBcolor, outer=TRUE)
+        }
     }
 }
 
