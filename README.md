@@ -72,12 +72,11 @@ R functions:
 
 # fixing sites NAN issue:
 
-Sites:  Ching-Ho and Risa both had alignments that gave WEIRD BEB results that contain `nan' values and therefore cannot be plotted
+Sites:  Ching-Ho and Risa both had alignments that gave WEIRD BEB results that contain `nan' values and could not be plotted by the shiny app. I have now fixed the shiny app to be able to handle that
 
 ```
 cd ~/FH_fast_storage/paml_screen/pamlApps/data/other_tests
-runPAML.pl CG31882_sim.fa 
-    # xx running 4063191
+runPAML.pl CG31882_sim.fa
 ```
 
 another example:
@@ -85,7 +84,28 @@ another example:
 cd ~/FH_fast_storage/paml_screen/pamlWrapperTestAlignments/testUserTree/Dmel_22_aln.fasta_phymlAndPAML
 ```
 
-look at rst file
-figure out what's going on (maybe)
-fix shiny app to handle nans (definitely)
-I think pamlWrapper have a similar rst parse script that I need to fix - it produces rst.BEB.tsv
+
+But I still don't know WHY the 'nan' values appear. 
+
+look at rst file. figure out what's going on (maybe)
+
+the docker image uses a different version of paml than I get when I use command line.
+command line: 4.8 (?) installed Jul 30  2014.
+this does NOT give me the nan values
+
+docker:  
+RUN conda install paml --channel bioconda
+CODONML in paml version 4.9, March 2015
+this DOES give me the nan values.
+
+xxx try installing 4.9j locally and seeing how that behaves
+CODONML in paml version 4.9j, February 2020
+this DOES NOT give me the nan values.
+
+Turns out there was a weird bug in PAML for a while
+https://groups.google.com/g/pamlsoftware/c/HXxqYBHYbRU/m/lLwe1V4CAwAJ
+that has now been solved. But I think the version of PAML that is in my docker container suffers from this bug.
+
+Next:  update our gizmo version of PAML
+update the version of PAML I'm using within Docker. Probably need to build from source rather than use the bioconda version. I do this for phyml and it works fine.
+
