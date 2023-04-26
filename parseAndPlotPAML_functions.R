@@ -17,11 +17,19 @@ parseRSTfile <- function(rstFile) {
         stop("\n\nERROR - the rst file you specified does not look right - the first line usually begins with 'Supplemental results for CODEML'\n\n")
     }
     
-    # for rst files that are output of paml run on >1 model at a time, we first extract the model 8 results
+    ### for rst files that are output of paml run on >1 model at a time, we first extract the model 8 results
+    # this is for paml v 4.8 output
     if(length(grep("^Model 8: beta\\&w>1$", rst))>0) {
         cat(" Found results for >1 NSsites model - taking only model 8 results\n")
         rst <- rst[ grep("^Model 8: beta&w>1$", rst)[1] : length(rst) ]
     }
+    # this is for paml v 4.10.6 output
+    if(length(grep("^NSsites Model 8: beta&w>1$", rst))>0) {
+        cat(" Found results for >1 NSsites model - taking only model 8 results\n")
+        rst <- rst[ grep("^NSsites Model 8: beta&w>1$", rst)[1] : length(rst) ]
+    }
+    
+    
     # the inverse grep on 'for 3 classes' gets rid of M2 BEB output
     lineWhereBEBsectionStarts <- 
         grepl("^Bayes Empirical Bayes \\(BEB\\) probabilities", rst) &
