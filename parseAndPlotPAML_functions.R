@@ -54,7 +54,7 @@ parseRSTfile <- function(rstFile) {
     BEBtable_prelim <- gsub("( ","(",BEBtable_prelim,fixed=TRUE)
     BEBtable_prelim <- paste(" ", BEBtable_prelim, sep="")
     BEBtable_prelim <- strsplit(BEBtable_prelim, "\\s+", perl=TRUE)
-
+    
     BEBtable <- data.frame(pos=as.integer(sapply(BEBtable_prelim, "[[", 2)))
     BEBtable[,firstSequence] <- sapply(BEBtable_prelim, "[[", 3)
     BEBtable[,"bestClass"] <- as.integer(gsub("[()]","",sapply(BEBtable_prelim, "[[", numClasses+4)))
@@ -136,7 +136,7 @@ plotOmegas <- function(BEBtable, title=NULL, barCol="grey",
     if(!is.null(title)) { title(main=title, line=0) }
     # add the y-axis:
     axis(side=2, at=axisTicks, labels=axisLabels, las=1, mgp=c(1.5,0.75,0)) 
-
+    
     BEBprobsPosSel <- BEBtable[,dim(BEBtable)[2]]
     if(sum(is.na(BEBprobsPosSel))>0) {
         warnText <- "WARNING - there are 'nan' values in your rst file. That's weird"
@@ -201,12 +201,27 @@ parseMLCbranches <- function(mlcFile) {
             stop("\n\nERROR - the mlc file you specified does not look right - there should be a single line somewhere, probably near the top, that first line usually begins with ", headerStringToSearchFor, "\n\n")
         }
     }
-    if(sum(grepl("^w ratios as labels for TreeView:", mlc)) != 1) {
-        stop("\n\nERROR - the mlc file you specified does not look right - there is usually a line near the bottom that contains 'w ratios as labels for TreeView:'. Is this really BRANCH-wise PAML output?\n\n")
+    
+    ### extract the labelled tree - this should be able to handle output from at least a couple of PAML versions (4.8 and 4.10.6)
+    headersForTreePortionOfMLCfile <- c("^w ratios as labels for TreeView:", 
+                                        "^w ratios as node labels:")
+    
+    findTreeHeaderLines <- lapply(headersForTreePortionOfMLCfile, function(x) {
+        grep(x, mlc)
+    } )
+    findTreeHeaderLines <- unique(unlist(findTreeHeaderLines))
+    if(length(findTreeHeaderLines) != 1) {
+        errorString <- paste(
+            "\n\n",
+            "ERROR - is this really BRANCH-wise PAML output?  ", 
+            "The mlc file you specified does not look right - there is usually a line near the bottom that contains one of these strings:\n",
+            headersForTreePortionOfMLCfile,
+            "\n\n",sep="\n")
+        stop(errorString)
     }
     
     ## get the tree
-    lineContainingWratioTree <- grep("^w ratios as labels for TreeView:", mlc) + 1
+    lineContainingWratioTree <- findTreeHeaderLines + 1
     tree <- mlc[lineContainingWratioTree]
     # strip out w ratio labels
     tree <- gsub(" #\\d+.\\d+ ","",tree, perl=TRUE)
