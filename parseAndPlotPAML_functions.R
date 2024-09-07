@@ -81,9 +81,14 @@ parseRSTfile <- function(rstFile) {
 plotProbs <- function(BEBtable, title=NULL, barCol="grey",
                       xlab="alignment position (codon)",
                       ylab="probability of positive selection (BEB)",
-                      addThresholdLine=FALSE, threshold=0.9, thresholdLineColor="red", 
-                      highlightHighBEB=FALSE, highBEBthreshold=0.9, highBEBcolor="red", 
+                      addThresholdLine=FALSE, threshold=0.9,
+                      thresholdLineColor="red", 
+                      highlightHighBEB=FALSE, highBEBthreshold=0.9,
+                      highBEBcolor="red", 
                       ...) {
+    if("tbl_df" %in% class(BEBtable)) {
+        BEBtable <- as.data.frame(BEBtable)
+    }
     probsColumn <- colnames(BEBtable)[ dim(BEBtable)[2] ]
     plot(BEBtable[,"pos"], BEBtable[,probsColumn], type="h", bty="n", 
          col=barCol, xlab=xlab, ylab=ylab, las=1, mgp=c(2,0.75,0), ...)
@@ -118,8 +123,12 @@ plotOmegas <- function(BEBtable, title=NULL, barCol="grey",
                        yAxisCenterAtNeutral=FALSE,
                        xlab="alignment position (codon)",
                        ylab="dN/dS estimate (BEB mean)",
-                       highlightHighBEB=FALSE, highBEBthreshold=0.9, highBEBcolor="red", 
+                       highlightHighBEB=FALSE, highBEBthreshold=0.9,
+                       highBEBcolor="red", 
                        ... ) {
+    if("tbl_df" %in% class(BEBtable)) {
+        BEBtable <- as.data.frame(BEBtable)
+    }
     omegas <- BEBtable[,"meanOmega"]
     maxOmegaForPlot <- ceiling(max(omegas))
     myYlim <- c(0, maxOmegaForPlot)
@@ -176,7 +185,7 @@ plotOmegas <- function(BEBtable, title=NULL, barCol="grey",
 # - the table of estimates for each branch
 parseMLCbranches <- function(mlcFile) {
     require(ape)
-    cat("reading file",mlcFile,"\n")
+    message("reading file",mlcFile,"\n")
     
     ### some checks on the inputs
     if(!file.exists(mlcFile)) {
