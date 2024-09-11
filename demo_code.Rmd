@@ -5,14 +5,20 @@ date: "`r Sys.Date()`"
 output: github_document
 always_allow_html: true
 ---
-    
+
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = TRUE)
 library(here)
 library(tidyverse)
 library(janitor)
 library(patchwork)
 library(kableExtra)
+
+library(ape) # for plotTree function to plot branch paml results
+
+library(treeio) # for parseMLCbranches_new function to read branch paml results
+library(ggtree) # for plotTree_new function to plot branch paml results
+
 source("parseAndPlotPAML_functions.R")
 ```
 
@@ -24,13 +30,15 @@ ACE2_sitePAML_rstFile <- "data/paml_version_4.10.6/example_ACE2/M8_initOmega0.4_
 
 ## get the BEB table as a data.frame
 ACE2siteResults <- parseRSTfile(ACE2_sitePAML_rstFile) # %>% 
-   #  as_tibble()
+#  as_tibble()
 ```
 
 look at that table for sites where BEB >= 0.90
 
 ```{r}
-ACE2siteResults[which(ACE2siteResults[,"prob_class11_omega_4.69678"] >= 0.90),]
+ACE2siteResults[which(ACE2siteResults[,"prob_class11_omega_4.69678"] >= 0.90),] %>% 
+    as_tibble() %>% 
+    select(pos, human_ACE2_ORF, meanOmega, prob_class11_omega_4.69678)
 ```
 
 
@@ -70,6 +78,64 @@ plotProbs(ACE2siteResults,
           highBEBcolor="blue")
 ```
 
+# Branch PAML
+
+## using original functions (base R)
+
+Read branch PAML's main output file, which will be called `mlc` unless you specified otherwise.  The `parseMLCbranches()` function returns a list with two objects, named `tree` (a phylo object) and `table` (a data.frame containing all results reported in the tabular section of PAML's mlc output file). 
+
+```{r}
+ACE2_branchPAML_mlcFile <- "data/paml_version_4.10.6/example_ACE2/BRANCHpaml_initOmega0.4_codonModel2/mlc"
+
+ACE2_branchPAML_results <- parseMLCbranches(ACE2_branchPAML_mlcFile)
+```
+
+Use the output of `parseMLCbranches()` to plot the tree, showing N, S, and dN/dS along each branch.
+
+The default is to color the label for any branch where dN/dS > 1.
+
+```{r, fig.height=9, fig.width=9}
+plotTree(phymlTree=ACE2_branchPAML_results[["tree"]], 
+         mlcTable=ACE2_branchPAML_results[["table"]], 
+         labelType="omega_NS",
+         myTitle="ACE2 branch PAML")
+```
+
+
+I can change the dN/dS threshold, as well as requiring a minimum N*dN (number of non-synonymous changes), and I can use a different color:
+
+
+```{r, fig.height=9, fig.width=9}
+plotTree(phymlTree=ACE2_branchPAML_results[["tree"]], 
+         mlcTable=ACE2_branchPAML_results[["table"]], 
+         labelType="omega_NS",
+         myTitle="ACE2 branch PAML", 
+         colorHighOmega=TRUE, 
+         colorHighOmegaThreshold=1.5,
+         colorHighOmegaThresholdNxN=3,
+         highOmegaColor="orange")
+```
+
+
+## using newer functions (uses ggtree), allows rerooting
+
+
+```{r, fig.height=9, fig.width=15}
+ACE2_branchPAML_results_treeio_v2 <- parseMLCbranches_new(ACE2_branchPAML_mlcFile)
+
+ACE2_branchPAML_results_treeio_v2_reroot <- root(
+    ACE2_branchPAML_results_treeio_v2,
+    node=getMRCA(ACE2_branchPAML_results_treeio_v2@phylo,
+                 c("human_ACE2_ORF",
+                   "white-tufted-ear_marmoset_ACE2")))
+
+p1 <- plotTree_new(ACE2_branchPAML_results_treeio_v2, 
+                   myTitle="ACE2 branch PAML, ggtree-based plot function")
+p2 <- plotTree_new(ACE2_branchPAML_results_treeio_v2_reroot, 
+                   myTitle="ACE2 branch PAML, rerooted, ggtree-based plot function")
+
+p1 + p2
+```
 
 
 # Finished

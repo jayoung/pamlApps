@@ -183,7 +183,9 @@ plotOmegas <- function(BEBtable, title=NULL, barCol="grey",
 # output: a list of two objects:
 # - the tree (read from the 'w ratios as labels' section)
 # - the table of estimates for each branch
-parseMLCbranches <- function(mlcFile) {
+## if tidyverseStyle=TRUE, the table will be a tibble with clean_names
+parseMLCbranches <- function(mlcFile,
+                             tidyverseStyle=FALSE) {
     require(ape)
     message("reading file",mlcFile,"\n")
     
@@ -280,7 +282,24 @@ parseMLCbranches <- function(mlcFile) {
                                      round(as.numeric(as.character(myTable[,"dN"])),2), ",", 
                                      round(as.numeric(as.character(myTable[,"dS"])),2), ")", sep="" )
     
-    myTable[,"myOmegas"] <- as.numeric(as.character(myTable[,"dN/dS"]))
+    myTable[,"myOmegas"] <- as.character(myTable[,"dN/dS"])
+    
+    ### make some columns numeric
+    numericColnames <- c("t", "N", "S", 
+                         "dN/dS", "dN", "dS", 
+                         "N*dN", "S*dS", "branchEnd1", "branchEnd2",
+                         "myOmegas")
+    for (eachColname in numericColnames) {
+        myTable[,eachColname] <- as.numeric(as.character(myTable[,eachColname]))
+    }
+    
+    ## maybe convert to tibble
+    if(tidyverseStyle) {
+        require(tidyr)
+        require(janitor)
+        myTable <- clean_names(as_tibble(myTable))
+    }
+    
     return(list(tree=tree, table=myTable))
 }
 
@@ -291,7 +310,10 @@ plotTree <- function(phymlTree, mlcTable, myTitle=NULL,
                      addScaleBar=FALSE, myScaleBarLength=0.5,
                      myScaleBarPosition="topleft", scaleBarFontSize=0.5,
                      branchLabelFontSize=0.5, taxonLabelFontSize=0.75,
-                     colorHighOmega=TRUE, colorHighOmegaThreshold=1, highOmegaColor="red",
+                     colorHighOmega=TRUE, 
+                     colorHighOmegaThreshold=1,
+                     colorHighOmegaThresholdNxN=0,
+                     highOmegaColor="red",
                      stripOffTaxonNames=NULL) {
     require(ape)
     ######### some checks on the inputs
@@ -305,7 +327,9 @@ plotTree <- function(phymlTree, mlcTable, myTitle=NULL,
     ## figure out how to match up edge labels with phymlTree$edge
     treeFileEdgeOrder <-  phymlTree$edge[,2]
     treeFileEdgeOrder[match(1:length(phymlTree$tip), treeFileEdgeOrder )] <- phymlTree$tip
-    treeFileEdgeOrder <- paste( phymlTree$edge[,1], "..", treeFileEdgeOrder, sep="")
+    treeFileEdgeOrder <- paste( phymlTree$edge[,1], "..", 
+                                treeFileEdgeOrder, 
+                                sep="")
     
     if (!identical( treeFileEdgeOrder, mlcTable[,"newBranchLabel"] )) {
         #if (!identical( treeFileEdgeOrder, names(mlcTable[,"newBranchLabel"] ))) {
@@ -315,6 +339,7 @@ plotTree <- function(phymlTree, mlcTable, myTitle=NULL,
     }
     myLabels <- mlcTable[,labelType]
     myOmegas <- mlcTable[,"myOmegas"]
+    myNdNs <- mlcTable[,"N*dN"]
     
     ## set up scale bar position
     scaleBarX <- NA
@@ -327,7 +352,9 @@ plotTree <- function(phymlTree, mlcTable, myTitle=NULL,
     ## get label colors
     myLabelColors <- rep("black", length(myLabels))
     if (colorHighOmega) { 
-        myLabelColors[which(myOmegas>colorHighOmegaThreshold)] <- highOmegaColor 
+        myLabelColors[which(
+            (myOmegas > colorHighOmegaThreshold) & 
+                (myNdNs >= colorHighOmegaThresholdNxN) )] <- highOmegaColor 
     }
     
     if(!is.null(stripOffTaxonNames)) {
@@ -349,3 +376,120 @@ plotTree <- function(phymlTree, mlcTable, myTitle=NULL,
     if(!is.null(myTitle)) { title(main=myTitle) }
 }
 
+
+########### some functions for when I use ggtree
+
+
+
+###### getTreeInfoJY - a utility function, as I'll never remember the name of that hidden function that gets info from the phylo and from the extraInfo table and combines them. Intended for treedata objects. 
+getTreeInfoJY <- function(treedata_object, fullInfo=FALSE) {
+    info <- tidytree:::.extract_annotda.treedata(treedata_object)
+    
+    ## some checking - node column is the only one I can check, I think. I don't know whether that .extract_annotda.treedata is guaranteed to give me info in the correct order
+    if(!identical(info$node, treedata_object@extraInfo$node)) {
+        warn("\n\nWARNING - the nodes are not in the same order in this new table as they are in the extraInfo portion of your treedata object\n\n")
+    }
+    
+    if(fullInfo) {
+        ## there are sometimes extra columns in the phylo object that we might want
+        info2 <- as_tibble(treedata_object@phylo)
+        newColumns <- setdiff(colnames(info2), colnames(info))
+        info <- left_join(info, info2[,c("node",newColumns)], by="node")
+        info <- info %>% 
+            relocate(parent)
+    }
+    return(info)
+}
+
+
+
+###### addInfoToTree - make a treedata object (ggtree) by combining a phylo object with a tibble that has info on the tips
+addInfoToTree <- function(tree, info, colnameForTaxonLabels="taxon") {
+    require(ggtree)
+    ##### get info in same order as taxa in the tree:
+    if (! colnameForTaxonLabels %in% colnames(info)) {
+        stop("\n\nERROR - there should be a ",colnameForTaxonLabels," column in the info table\n\n")
+    }
+    ## check all taxa are in the info table
+    tipLabelsInInfoTable <- info %>% select(all_of(colnameForTaxonLabels)) %>% deframe()
+    if(length(setdiff(tree$tip.label, tipLabelsInInfoTable))>0) {
+        stop("\n\nERROR - there are taxon labels in the tree that are not in the info table\n\n")
+    }
+    # now get info
+    desiredRows <- match(tree$tip.label, tipLabelsInInfoTable)
+    info_treeorder <- info[desiredRows,] 
+    # add info to tree
+    tree_withInfo <-  left_join(
+        tree, 
+        info_treeorder ,
+        by=c("label"=colnameForTaxonLabels))
+    return(tree_withInfo)
+}
+
+##### parseMLCbranches_new - a wrapper around treeio::read.codeml_mlc where we just add a few convenience columns
+parseMLCbranches_new <- function(mlc_file, omega_digits=2) {
+    require(treeio)
+    read.codeml_mlc(mlc_file) %>% 
+        mutate(branch_label=case_when(
+            is.na(dN_vs_dS) ~ "",
+            TRUE ~ paste(round(dN_vs_dS, digits=omega_digits), "\n(", 
+                         N_x_dN, ",", S_x_dS, ")", sep=""))) %>% 
+        ## add labelAgain because the tip labels get lost when I reroot, and this helps me keep them
+        mutate(tip_label=label)
+}
+
+
+#### plotTree_new: a function to plot branch PAML output that I read in using parseMLCbranches_new (a wrapper around treeio::read.codeml_mlc)
+# input = treedata object (output of parseMLCbranches)
+# output = ggplot of the tree, with branch labels showing dN/dS, N and S
+plotTree_new <- function(tree, 
+                         removeBranchLengths=TRUE,
+                         adjustBranchLabPos=0,
+                         myTitle=NULL, 
+                         addScaleBar=FALSE, 
+                         myScaleBarLength=0.1,
+                         branchLabelFontSize=3, taxonLabelFontSize=4,
+                         colorHighOmega=TRUE, 
+                         colorHighOmegaThreshold=1,
+                         colorHighOmegaThresholdNxN=0,
+                         highOmegaColor="red",
+                         stripOffTaxonNames=NULL) {
+    require(ggtree)
+    if(removeBranchLengths) {
+        tree@phylo$edge.length <- NULL
+        addScaleBar <- FALSE
+        adjustBranchLabPos <- -0.5
+    }
+
+    ## get label colors
+    tree <- tree %>% 
+        mutate(category = case_when(
+            (dN_vs_dS > colorHighOmegaThreshold) &
+                (N_x_dN >= colorHighOmegaThresholdNxN) ~ "interesting",
+            TRUE ~ "not_interesting"
+        )  ) 
+    #### set color scheme
+    colorScheme <- character()
+    colorScheme["interesting"] <- "red"
+    colorScheme["not_interesting"] <- "black"
+    if(!colorHighOmega) { colorScheme["interesting"] <- "black"}
+    
+    ## plot tree
+    myPlot <- ggtree(tree)  + 
+            geom_tiplab(aes(label=tip_label),
+                        size=taxonLabelFontSize) +     
+        geom_nodelab(aes(label=branch_label,color=category),
+                     node="all", 
+                     size=branchLabelFontSize, 
+                     hjust=0.5, nudge_x=adjustBranchLabPos ) +
+        hexpand(0.5) +
+        scale_color_manual(values=colorScheme) + 
+        guides(color="none") 
+    
+
+    if(!is.null(myTitle)) { myPlot <- myPlot + labs(title=myTitle) }
+    if (addScaleBar) {
+        myPlot <- myPlot + geom_treescale(width=myScaleBarLength)
+    }
+    return(myPlot)
+}
