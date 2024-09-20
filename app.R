@@ -36,8 +36,8 @@ ui <- fluidPage(
                     fluidRow(
                         column(5,h4("Upload rst file:")),
                         column(7,checkboxInput(inputId="sites_useACE2", 
-                                  label=h6("or, use ACE2 example file"), 
-                                  value=FALSE))),
+                                               label=h6("or, use ACE2 example file"), 
+                                               value=FALSE))),
                     fileInput(inputId="sites_rstFile",label=NULL),
                     hr(),
                     
@@ -68,12 +68,12 @@ ui <- fluidPage(
                     textInput(inputId="sites_plotTitle",
                               label="Plot title",
                               value="Site PAML results"),
-
+                    
                     ## which plot type?
                     radioButtons(inputId="sites_plotType", label="Plot type",
                                  choices=list("dN/dS estimates"="omegas",
-                                                "BEB probabilities"="probs")),
-
+                                              "BEB probabilities"="probs")),
+                    
                     ## options relating to coloring sites with high dN/dS
                     tags$b("Color sites with high probability of positive selection?"),
                     fluidRow(
@@ -81,8 +81,8 @@ ui <- fluidPage(
                                                label="Add color?", 
                                                value=TRUE)),
                         column(4,numericInput(inputId="sites_colHighThreshold", 
-                                     label="Probability threshold", 
-                                     value=0.9)),
+                                              label="Probability threshold", 
+                                              value=0.9)),
                         column(4,colourInput(inputId="sites_highBEBcolor", 
                                              label=p("Choose color"), 
                                              value="red",
@@ -90,7 +90,7 @@ ui <- fluidPage(
                                              returnName=TRUE, 
                                              closeOnClick=TRUE))
                     ),
-
+                    
                     ## options relating to adding a threshold line to the probs plot
                     # xx I could perhaps only make these options appear if we select the probs plot - they're not relevant to sites plot
                     conditionalPanel(
@@ -127,8 +127,8 @@ ui <- fluidPage(
                     fluidRow(
                         column(5,h4("Upload mlc file:")),
                         column(7,checkboxInput(inputId="branches_useACE2", 
-                                  label=h6("or, use ACE2 example file"), 
-                                  value=FALSE))),
+                                               label=h6("or, use ACE2 example file"), 
+                                               value=FALSE))),
                     fileInput(inputId="branches_mlcFile",label=NULL),
                     hr(),
                     
@@ -154,8 +154,8 @@ ui <- fluidPage(
                     tags$b("Font sizes"),
                     fluidRow(
                         column(4,numericInput(inputId="branches_taxLabelSize", 
-                                               label="Taxon labels", 
-                                               value=0.75)),
+                                              label="Taxon labels", 
+                                              value=0.75)),
                         column(4,numericInput(inputId="branches_branchLabelSize", 
                                               label="Branch labels", 
                                               value=0.5))),
@@ -167,8 +167,11 @@ ui <- fluidPage(
                                                label="Add color?", 
                                                value=TRUE)),
                         column(4,numericInput(inputId="branches_colHighThreshold", 
-                                     label="dN/dS threshold", 
-                                     value=1)),
+                                              label="dN/dS threshold", 
+                                              value=1)),
+                        column(4,numericInput(inputId="branches_colHighThreshold_NdN", 
+                                              label="N*dN threshold", 
+                                              value=1)),
                         column(4,colourInput(inputId="branches_highOmegaColor", 
                                              label="Choose color", 
                                              value="red",
@@ -192,7 +195,7 @@ server <- function(input, output) {
     ## get name of rst file
     rstFilename <- reactive({
         if (input$sites_useACE2) {
-            return("data/example_ACE2/M8_initOmega0.4_codonModel2/rst")
+            return("data/paml_version_4.10.6/example_ACE2/M8_initOmega0.4_codonModel2/rst")
         } else { return(input$sites_rstFile[1,"datapath"]) }
     })
     
@@ -206,7 +209,7 @@ server <- function(input, output) {
         )
         parseRSTfile(rstFilename())
     })
-
+    
     ### make the plot - should update when a new file is uploaded.
     # I use a separate function to render it, so I can use it within the app AND when saving a pdf file
     myOmegaPlot <- function(){
@@ -263,7 +266,7 @@ server <- function(input, output) {
     ## get name of mlc file
     mlcFilename <- reactive({
         if (input$branches_useACE2) {
-            return("data/example_ACE2/BRANCHpaml_initOmega0.4_codonModel2/mlc")
+            return("data/paml_version_4.10.6/example_ACE2/BRANCHpaml_initOmega0.4_codonModel2/mlc")
         } else { return(input$branches_mlcFile[1,"datapath"]) }
     })
     
@@ -286,6 +289,7 @@ server <- function(input, output) {
                  myTitle=input$branches_plotTitle, 
                  colorHighOmega=input$branches_colHigh, 
                  colorHighOmegaThreshold=input$branches_colHighThreshold, 
+                 colorHighOmegaThresholdNxN=input$branches_colHighThreshold_NdN,
                  branchLabelFontSize=input$branches_branchLabelSize, 
                  taxonLabelFontSize=input$branches_taxLabelSize,
                  highOmegaColor=input$branches_highOmegaColor)
