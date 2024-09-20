@@ -24,6 +24,7 @@ ui <- fluidPage(
     
     ## stuff that's displayed:
     titlePanel("Janet's apps to parse and plot PAML output"),
+ 
     navbarPage(
         title="Analysis type:",
         
@@ -116,6 +117,17 @@ ui <- fluidPage(
                     plotOutput("sites_plot",height="300px"),
                     includeMarkdown("sites_infoText_for_shiny.md")
                 )
+            ),
+            ## footer
+            hr(),
+            tags$footer(
+                # tags$footer(
+                "The code behind this app is available here: ",
+                tags$a(
+                    "https://github.com/jayoung/pamlApps",
+                    href = "https://github.com/jayoung/pamlApps"
+                ),
+                style = "position: absolute; width: 100%; color: black; text-align: center;"
             )
         ),
         ### branch PAML
@@ -184,6 +196,17 @@ ui <- fluidPage(
                     plotOutput("branches_plot",height="600px"),
                     includeMarkdown("branches_infoText_for_shiny.md")
                 )
+            ),
+            ## footer
+            hr(),
+            tags$footer(
+                # tags$footer(
+                "The code behind this app is available here: ",
+                tags$a(
+                    "https://github.com/jayoung/pamlApps",
+                    href = "https://github.com/jayoung/pamlApps"
+                ),
+                style = "position: absolute; width: 100%; color: black; text-align: center;"
             )
         )
     )
