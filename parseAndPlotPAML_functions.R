@@ -76,6 +76,32 @@ parseRSTfile <- function(rstFile) {
     return(BEBtable)
 }
 
+
+
+##### parsedRSTtoTbl - works on data.frame output of parseRSTfile, makes
+# 1. a tibble with 1 row per site with clean_names style colnames
+# 2. a metadata tibble that captures some of the data that was in the colnames
+parsedRSTtoTbl <- function(rst_df) {
+    require(tidyverse)
+    require(janitor)
+    ## I don't need the omegas of each class but parse colnames(rst_df) further to get them if needed
+    rst_colnames <- colnames(rst_df)
+    
+    rst_tbl <- rst_df %>% 
+        as_tibble()  %>% 
+        clean_names() %>% 
+        dplyr::rename(
+            aln_pos=pos,
+            aa_refseq=2
+        ) %>% 
+        rename_with(.cols=starts_with("prob_class"),
+                    .fn= ~ gsub("_omega_.+?$", "", .x) )
+    
+    output <- list(sites=rst_tbl,
+                   metadata=rst_colnames)
+    return(output)
+}
+
 ###### plotProbs: a function to plot the BEB probabilities at each site, with an option to color sites with high BEB probability
 ## uses the output of parseRSTfile
 plotProbs <- function(BEBtable, title=NULL, barCol="grey",
@@ -116,6 +142,57 @@ plotProbs <- function(BEBtable, title=NULL, barCol="grey",
     if(!is.null(title)) { title(main=title, line=0) }
 }
 
+
+###### plotProbs_new: a ggplot-based function to plot the BEB probabilities at each site, with an option to color sites with high BEB probability
+## uses the output of parseRSTfile
+plotProbs_new <- function(
+        BEBtbl, title=NULL, barCol="grey",
+        xlab="alignment position (codon)",
+        ylab="probability of positive selection (BEB)",
+        addThresholdLine=FALSE, threshold=0.9,
+        thresholdLineColor="red", 
+        highlightHighBEB=FALSE, highBEBthreshold=0.9,
+        highBEBcolor="red", 
+        ...) {
+    if(sum(is.na(BEBtbl$prob_class11))>0) {
+        warning("WARNING - there are 'nan' values in your rst file. That's weird")
+    }
+    
+    BEBtbl_to_plot <- BEBtbl %>% 
+        select(aln_pos, prob_class11) 
+    
+    if(highlightHighBEB) {
+        BEBtbl_to_plot <- BEBtbl_to_plot %>% 
+            mutate(my_color= case_when( 
+                prob_class11>=highBEBthreshold ~ highBEBcolor,
+                TRUE ~ barCol)) 
+        myLegend <- paste("Color=sites where BEB probability >=",highBEBthreshold)
+        my_plot <- BEBtbl_to_plot %>% 
+            ggplot(aes(x=aln_pos, y=prob_class11, 
+                       color=my_color, fill=my_color)) +
+            scale_fill_identity(guide = "legend") +
+            scale_color_identity(guide = "legend") +
+            labs(subtitle=myLegend)
+    } else {
+        my_plot <- BEBtbl_to_plot %>% 
+            ggplot(aes(x=aln_pos, y=prob_class11))
+    }
+    my_plot <- my_plot + 
+        labs(x=xlab, y=ylab, title=title) +
+        theme_classic() +
+        coord_cartesian(ylim=c(0,1)) +
+        guides(color="none", fill="none")  
+    
+    if(addThresholdLine) {
+        my_plot <- my_plot +
+            geom_hline(yintercept=highBEBthreshold, 
+                       lty=2, color=thresholdLineColor)
+    }
+    my_plot <- my_plot +  
+        geom_col(linewidth=0)
+    return(my_plot)
+    
+}
 
 ###### plotOmegas: a function to plot the BEB mean dN/dS estimates at each site, with an option to color sites with high BEB probability
 ## uses the output of parseRSTfile
@@ -175,6 +252,50 @@ plotOmegas <- function(BEBtable, title=NULL, barCol="grey",
     }
 }
 
+###### plotOmegas_new: a ggplot-based function to plot the BEB mean dN/dS estimates at each site, with an option to color sites with high BEB probability
+## uses the output of parseRSTfile
+plotOmegas_new <- function(BEBtbl, title=NULL, barCol="grey", 
+                           xlab="alignment position (codon)",
+                           ylab="dN/dS estimate (BEB mean)",
+                           highlightHighBEB=FALSE, highBEBthreshold=0.9,
+                           highBEBcolor="red", 
+                           ... ) {
+    
+    if(sum(is.na(BEBtbl$prob_class11))>0) {
+        warning("WARNING - there are 'nan' values in your rst file. That's weird")
+    }
+    
+    BEBtbl_to_plot <- BEBtbl %>% 
+        select(aln_pos, mean_omega, prob_class11) 
+    if(highlightHighBEB) {
+        BEBtbl_to_plot <- BEBtbl_to_plot %>% 
+            mutate(my_color= case_when( 
+                prob_class11>=highBEBthreshold ~ highBEBcolor,
+                TRUE ~ barCol)) 
+        myLegend <- paste("Color=sites where BEB probability >=",highBEBthreshold)
+        my_plot <- BEBtbl_to_plot %>% 
+            ggplot(aes(x=aln_pos, y=mean_omega, 
+                       color=my_color, fill=my_color)) +
+            scale_color_identity(guide = "legend") +
+            scale_fill_identity(guide = "legend")
+    } else {
+        my_plot <- BEBtbl_to_plot %>% 
+            ggplot(aes(x=aln_pos, y=mean_omega))
+    }
+    
+    my_plot <- my_plot +
+        geom_col(linewidth=0) +
+        labs(x=xlab, y=ylab, title = title) +
+        theme_classic() +
+        guides(color="none", fill="none") +
+        expand_limits(y = 0)
+    
+    if(highlightHighBEB) {
+        my_plot <- my_plot + labs(subtitle=myLegend)
+    }
+    return(my_plot)
+}
+
 
 
 ############## branch PAML functions
@@ -187,7 +308,7 @@ plotOmegas <- function(BEBtable, title=NULL, barCol="grey",
 parseMLCbranches <- function(mlcFile,
                              tidyverseStyle=FALSE) {
     require(ape)
-    message("reading file",mlcFile,"\n")
+    message("reading file ",mlcFile,"\n")
     
     ### some checks on the inputs
     if(!file.exists(mlcFile)) {
@@ -493,3 +614,93 @@ plotTree_new <- function(tree,
     }
     return(myPlot)
 }
+
+
+###### some utility functions for manipulating phylo/treedata objects. 
+### xxx Maybe these should go in a different repo, as they're for more than just PAML stuff.
+
+### getAncestor - I am sure there's a function to do this, but I don't know where I would find it
+getAncestor <- function(tree, nodeID) {
+    if(class(tree) != "phylo") {
+        stop("\n\nERROR - the getAncestor function is intended for phylo class objects\n\n")
+    }
+    edge_mat <- tree$edge
+    if(!nodeID %in% edge_mat[,2]) {
+        stop("\n\nERROR - the node you specified does not have an ancestor\n\n")
+    }
+    anc <- edge_mat[which(edge_mat[,2]==nodeID),1]
+    return(anc)
+}
+## example:
+# my_node <- getMRCA(tree, c("taxon1", "taxon2"))
+# my_anc <- getAncestor(tree, my_node)
+
+
+###### getTreeInfoJY - a utility function, as I'll never remember the name of that hidden function that gets info from the phylo and from the extraInfo table and combines them. Intended for treedata objects. 
+getTreeInfoJY <- function(treedata_object, fullInfo=FALSE) {
+    info <- tidytree:::.extract_annotda.treedata(treedata_object)
+    
+    ## some checking - node column is the only one I can check, I think. I don't know whether that .extract_annotda.treedata is guaranteed to give me info in the correct order
+    if(!identical(info$node, treedata_object@extraInfo$node)) {
+        warn("\n\nWARNING - the nodes are not in the same order in this new table as they are in the extraInfo portion of your treedata object\n\n")
+    }
+    
+    if(fullInfo) {
+        ## there are sometimes extra columns in the phylo object that we might want
+        info2 <- as_tibble(treedata_object@phylo)
+        newColumns <- setdiff(colnames(info2), colnames(info))
+        info <- left_join(info, info2[,c("node",newColumns)], by="node")
+        info <- info %>% 
+            relocate(parent)
+    }
+    return(info)
+}
+
+###### addInfoToTree - make a treedata object by combining a phylo object with a tibble that has info on the tips
+addInfoToTree <- function(tree, info, colnameForTaxonLabels="taxon") {
+    ##### get info in same order as taxa in the tree:
+    if (! colnameForTaxonLabels %in% colnames(info)) {
+        stop("\n\nERROR - there should be a ",colnameForTaxonLabels," column in the info table\n\n")
+    }
+    ## check all taxa are in the info table
+    tipLabelsInInfoTable <- info %>% select(all_of(colnameForTaxonLabels)) %>% deframe()
+    if(length(setdiff(tree$tip.label, tipLabelsInInfoTable))>0) {
+        stop("\n\nERROR - there are taxon labels in the tree that are not in the info table\n\n")
+    }
+    # now get info
+    desiredRows <- match(tree$tip.label, tipLabelsInInfoTable)
+    info_treeorder <- info[desiredRows,] 
+    # add info to tree
+    tree_withInfo <-  left_join(
+        tree, 
+        info_treeorder ,
+        by=c("label"=colnameForTaxonLabels))
+    return(tree_withInfo)
+}
+
+
+#### reroot_treedata_JY - reroots a treedata object and tries to restore the tip labels, which get lost along the way.   xxx there's room for improvement here and I'm not sure it'll always get it righ! more work needed
+## but I need a function, because simply using root loses the tip labels. I think I submitted a github issue about this?
+## rerooting a treedata object is tricky. If possible, do it BEFORE creating a treedata object. But that might not always be possible, e.g. if I've read tree using parseMLCbranches_new, which uses treeio::read.codeml_mlc
+reroot_treedata_JY <- function(tree,
+                               nodeID) {
+    if(class(tree) != "treedata") {
+        stop("\n\nERROR - this function is meant for treedata class objects\n\n")
+    }
+    ## this will let me get the tip labels back again
+    tree_tbl <- getTreeInfoJY(tree)
+    tip_info <- tree_tbl %>% 
+        filter(isTip) %>% 
+        dplyr::select(node,label) %>% 
+        mutate(node=as.character(node))
+    # return(tip_info)
+    tree_rerooted <- root(tree, node=nodeID)
+    
+    tiplabs_after_reroot <- tree_rerooted@phylo$tip.label
+    
+    tiplabs_should_be <- tip_info[match(tiplabs_after_reroot, tip_info$node), "label"] %>% 
+        deframe()
+    tree_rerooted@phylo$tip.label <- tiplabs_should_be
+    return(tree_rerooted)
+}
+

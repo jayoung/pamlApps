@@ -46,6 +46,30 @@ translateGappedAln <- function(myAln, unknownCodonTranslatesTo="-") {
     return(myAAaln)
 }
 
+########### alnToTibble - converts an alignment into a tibble, one row per alignment position, one column per aligned seq
+## if we supply refSeqName, it'll also get the ungapped position in that refseq
+alnToTibble <- function(aln, refSeqName=NULL) {
+    names(aln) <- sapply(strsplit(names(aln), " "), "[[", 1)
+    output <- as.matrix(aln) %>% 
+        t() %>% 
+        as_tibble() 
+    output$aln_pos <- 1:width(aln)[1]
+    output <- output %>% 
+        relocate(aln_pos)
+    if(!is.null(refSeqName)) {
+        if(!refSeqName %in% colnames(output)) {
+            stop("\n\nERROR - the refSeqName you supplied is not in the alignment")
+        }
+        ref_seq <- output[,refSeqName] %>% 
+            deframe()
+        output$ref_pos <- cumsum(ref_seq != "-")
+        output[which(ref_seq=="-"),"ref_pos"] <- NA
+        output <- output %>% 
+            relocate(ref_pos, .after=aln_pos)
+    }
+    return(output)
+}
+
 
 
 ########### getAlnPosLookupTable - uses an alignment to get a lookup table of alignment position versus ungapped position in each sequence. Gap positions get an NA
