@@ -159,7 +159,7 @@ plotProbs_new <- function(
     }
     
     BEBtbl_to_plot <- BEBtbl %>% 
-        select(aln_pos, prob_class11) 
+        dplyr::select(aln_pos, prob_class11) 
     
     if(highlightHighBEB) {
         BEBtbl_to_plot <- BEBtbl_to_plot %>% 
@@ -266,7 +266,7 @@ plotOmegas_new <- function(BEBtbl, title=NULL, barCol="grey",
     }
     
     BEBtbl_to_plot <- BEBtbl %>% 
-        select(aln_pos, mean_omega, prob_class11) 
+        dplyr::select(aln_pos, mean_omega, prob_class11) 
     if(highlightHighBEB) {
         BEBtbl_to_plot <- BEBtbl_to_plot %>% 
             mutate(my_color= case_when( 
@@ -532,7 +532,9 @@ addInfoToTree <- function(tree, info, colnameForTaxonLabels="taxon") {
         stop("\n\nERROR - there should be a ",colnameForTaxonLabels," column in the info table\n\n")
     }
     ## check all taxa are in the info table
-    tipLabelsInInfoTable <- info %>% select(all_of(colnameForTaxonLabels)) %>% deframe()
+    tipLabelsInInfoTable <- info %>% 
+        dplyr::select(all_of(colnameForTaxonLabels)) %>% 
+        deframe()
     if(length(setdiff(tree$tip.label, tipLabelsInInfoTable))>0) {
         stop("\n\nERROR - there are taxon labels in the tree that are not in the info table\n\n")
     }
@@ -663,7 +665,9 @@ addInfoToTree <- function(tree, info, colnameForTaxonLabels="taxon") {
         stop("\n\nERROR - there should be a ",colnameForTaxonLabels," column in the info table\n\n")
     }
     ## check all taxa are in the info table
-    tipLabelsInInfoTable <- info %>% select(all_of(colnameForTaxonLabels)) %>% deframe()
+    tipLabelsInInfoTable <- info %>% 
+        dplyr::select(all_of(colnameForTaxonLabels)) %>% 
+        deframe()
     if(length(setdiff(tree$tip.label, tipLabelsInInfoTable))>0) {
         stop("\n\nERROR - there are taxon labels in the tree that are not in the info table\n\n")
     }

@@ -38,7 +38,7 @@ look at that table for sites where BEB >= 0.90
 ```{r}
 ACE2siteResults[which(ACE2siteResults[,"prob_class11_omega_4.69678"] >= 0.90),] %>% 
     as_tibble() %>% 
-    select(pos, human_ACE2_ORF, meanOmega, prob_class11_omega_4.69678)
+    dplyr::select(pos, human_ACE2_ORF, meanOmega, prob_class11_omega_4.69678)
 ```
 
 
