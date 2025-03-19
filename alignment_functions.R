@@ -15,7 +15,9 @@ getCodons <- function(myAln) {
 }
 
 ## translateCodons - takes a character vector of codons as input, outputs the corresponding amino acids
-translateCodons <- function(myCodons, unknownCodonTranslatesTo="-") {
+translateCodons <- function(myCodons, 
+                            unknownCodonTranslatesTo="-", 
+                            quiet=FALSE) {
     ## make new genetic code
     gapCodon <- "-"
     names(gapCodon) <- "---"
@@ -26,11 +28,13 @@ translateCodons <- function(myCodons, unknownCodonTranslatesTo="-") {
     
     ## check for codons that were not possible to translate, e.g. frameshift codons
     if (sum(is.na(pep))>0) {
-        message("\nWarning - there were codons I could not translate. Using this character: ", unknownCodonTranslatesTo, "\n")
-        unknownCodons <- unique(myCodons[ which(is.na(pep))])
-        message("The codons in question were: ",
-            paste(unknownCodons, collapse=","),
-            "\n\n")
+        if(!quiet) {
+            message("\nWarning - there were codons I could not translate. Using this character: ", unknownCodonTranslatesTo, "\n")
+            unknownCodons <- unique(myCodons[ which(is.na(pep))])
+            message("The codons in question were: ",
+                    paste(unknownCodons, collapse=","),
+                    "\n\n")
+        }
         pep[ which(is.na(pep)) ] <- unknownCodonTranslatesTo
     }
     
@@ -40,9 +44,15 @@ translateCodons <- function(myCodons, unknownCodonTranslatesTo="-") {
 }
 
 ## wrap the getCodons and translateCodons functions together into one:
-translateGappedAln <- function(myAln, unknownCodonTranslatesTo="-") {
+translateGappedAln <- function(myAln, 
+                               unknownCodonTranslatesTo="-", 
+                               quiet=FALSE) {
     myCodons <- getCodons(myAln)
-    myAAaln <- AAStringSet(unlist(lapply(myCodons, translateCodons, unknownCodonTranslatesTo=unknownCodonTranslatesTo)))
+    myAAaln <- AAStringSet(unlist(lapply(
+        myCodons, 
+        translateCodons, 
+        unknownCodonTranslatesTo=unknownCodonTranslatesTo, 
+        quiet=quiet)))
     return(myAAaln)
 }
 
