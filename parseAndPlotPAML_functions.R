@@ -575,15 +575,26 @@ plotTree_new <- function(tree,
                          removeBranchLengths=TRUE,
                          adjustBranchLabPos=0,
                          myTitle=NULL, 
+                         mySubtitle=NULL, 
                          addScaleBar=FALSE, 
                          myScaleBarLength=0.1,
                          branchLabelFontSize=3, taxonLabelFontSize=4,
+                         stripOffTaxonNames=NULL,
+                         interesting_branch_color = "red",
+                         ### if we want to color branches with HIGH dN/dS:
                          colorHighOmega=TRUE, 
                          colorHighOmegaThreshold=1,
                          colorHighOmegaThresholdNxN=0,
-                         highOmegaColor="red",
-                         stripOffTaxonNames=NULL) {
+                         # highOmegaColor="red",
+                         ### if we want to color branches with LOW dN/dS:
+                         colorLowOmega=FALSE, 
+                         colorLowOmegaThreshold=1,
+                         colorLowOmegaThresholdNxN=0) {
     require(ggtree)
+
+    if(colorHighOmega & colorLowOmega) {
+        stop("\n\nERROR - script is not set up (yet) to simultaneously color branches with high AND low omega (i.e. cannot have both colorHighOmega and colorLowOmega)\n\n")
+    }
     if(removeBranchLengths) {
         tree@phylo$edge.length <- NULL
         addScaleBar <- FALSE
@@ -591,21 +602,34 @@ plotTree_new <- function(tree,
     }
 
     ## get label colors
-    tree <- tree %>% 
-        mutate(category = case_when(
-            (dN_vs_dS > colorHighOmegaThreshold) &
-                (N_x_dN >= colorHighOmegaThresholdNxN) ~ "interesting",
-            TRUE ~ "not_interesting"
-        )  ) 
+    if (colorHighOmega) {
+        tree <- tree %>% 
+            mutate(category = case_when(
+                (dN_vs_dS >= colorHighOmegaThreshold) &
+                    (N_x_dN >= colorHighOmegaThresholdNxN) ~ "interesting",
+                TRUE ~ "not_interesting"
+            )  ) 
+    }
+    if (colorLowOmega) {
+        tree <- tree %>% 
+            mutate(category = case_when(
+                (dN_vs_dS <= colorLowOmegaThreshold) &
+                    (N_x_dN >= colorLowOmegaThresholdNxN) ~ "interesting",
+                TRUE ~ "not_interesting"
+            )  ) 
+    }
+    if (!colorHighOmega & !colorLowOmega) {
+        tree <- tree %>% 
+            mutate(category = "not_interesting")
+    }
     #### set color scheme
     colorScheme <- character()
-    colorScheme["interesting"] <- "red"
+    colorScheme["interesting"] <- interesting_branch_color
     colorScheme["not_interesting"] <- "black"
-    if(!colorHighOmega) { colorScheme["interesting"] <- "black"}
     
     ## plot tree
     myPlot <- ggtree(tree)  + 
-            geom_tiplab(aes(label=tip_label),
+        geom_tiplab(aes(label=tip_label),
                         size=taxonLabelFontSize) +     
         geom_nodelab(aes(label=branch_label,color=category),
                      node="all", 
@@ -614,9 +638,9 @@ plotTree_new <- function(tree,
         hexpand(0.5) +
         scale_color_manual(values=colorScheme) + 
         guides(color="none") 
-    
 
     if(!is.null(myTitle)) { myPlot <- myPlot + labs(title=myTitle) }
+    if(!is.null(mySubtitle)) { myPlot <- myPlot + labs(subtitle=mySubtitle) }
     if (addScaleBar) {
         myPlot <- myPlot + geom_treescale(width=myScaleBarLength)
     }
