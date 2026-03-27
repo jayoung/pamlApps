@@ -1,3 +1,9 @@
+######### to source this file:
+# malik_h_dir <- "/fh/fast/malik_h/"
+# if (Sys.info()[["sysname"]]=="Darwin") { malik_h_dir <- "/Volumes/malik_h/" }
+# source(paste0(malik_h_dir, 
+#               "user/jayoung/paml_screen/pamlApps/parseAndPlotPAML_functions.R"))
+
 ############## sitewise PAML functions
 
 ##### parseRSTfile: a function to take the rst file output of site-wise PAML (e.g. model 8)
